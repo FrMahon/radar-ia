@@ -1,0 +1,88 @@
+name: pipeline
+
+on:
+  schedule:
+    - cron: "0 10 * * *"  # todos los días, 07:00 en Argentina
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "site/**", "tests/**", "pyproject.toml", ".github/workflows/**"]
+
+permissions:
+  contents: write  # para guardar en el repo las fotos diarias de Hugging Face
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  pipeline:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+
+      # arXiv se puede volver a descargar, así que vive en la caché y no en el repo.
+      # Si la caché no está (primera vez o se borró), el pipeline baja solo las 12 semanas.
+      # La clave lleva el intento: un "Re-run" conserva el run_id y una caché no se sobrescribe.
+      - name: Restaurar arXiv
+        uses: actions/cache/restore@v6
+        with:
+          path: data/raw/arxiv
+          key: arxiv-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: arxiv-
+
+      - name: Extraer, cargar, transformar, controlar y exportar
+        run: radar run
+        env:
+          # Un push de código solo republica con los datos que ya hay.
+          RADAR_SKIP_EXTRACT: ${{ github.event_name == 'push' && '1' || '' }}
+
+      - name: Guardar arXiv
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: data/raw/arxiv
+          key: arxiv-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Las fotos de Hugging Face no se pueden recuperar después: se versionan en el repo.
+      # Este commit además mantiene vivo el cron (GitHub lo pausa tras 60 días sin actividad).
+      - name: Guardar foto de Hugging Face
+        run: |
+          git add data/raw/hf
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "datos: foto de Hugging Face del $(date -u +%F)"
+            git pull --rebase && git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: pipeline
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

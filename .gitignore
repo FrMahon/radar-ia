@@ -1,0 +1,13 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# El warehouse se reconstruye entero desde los archivos crudos en cada corrida.
+data/warehouse.db
+# arXiv se puede volver a descargar: vive en la caché de GitHub Actions, no en el repo.
+# Los snapshots de Hugging Face sí se versionan (data/raw/hf): no se pueden recuperar después.
+data/raw/arxiv/
+*.tmp
+site/data/
+extract.log

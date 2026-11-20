@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radar de IA</title>
+  <meta name="description" content="Qué se investiga en inteligencia artificial: papers de arXiv por tema, semana a semana, y los modelos en tendencia en Hugging Face. Actualizado todos los días.">
+  <meta property="og:title" content="Radar de IA">
+  <meta property="og:description" content="Papers de IA en arXiv por tema y modelos en tendencia en Hugging Face, actualizado todos los días.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=Spectral:wght@500;600&display=swap">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header class="opening">
+      <h1 id="headline">¿De qué se habla en la investigación en IA?</h1>
+      <p class="dek" id="dek">Papers de inteligencia artificial publicados en arXiv, agrupados por tema, semana a semana.</p>
+    </header>
+
+    <section class="topics" aria-labelledby="topics-title">
+      <h2 id="topics-title">Tema por tema</h2>
+      <p class="lead">Qué parte de los papers de cada semana tiene el tema en el título. Elegí uno en la lista o tocá una línea del gráfico.</p>
+      <div class="topics-grid">
+        <div class="topic-list" id="topic-list" role="radiogroup" aria-label="Tema"></div>
+        <figure class="chart">
+          <div id="chart"></div>
+          <figcaption id="topic-note" aria-live="polite"></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="papers" aria-labelledby="papers-title">
+      <h2 id="papers-title">Los papers de esta semana</h2>
+      <p class="lead" id="papers-lead"></p>
+      <div class="filters">
+        <input type="search" id="search" placeholder="Buscar en los títulos" aria-label="Buscar en los títulos">
+        <label class="check"><input type="checkbox" id="all-topics"> Todos los temas</label>
+      </div>
+      <ol class="paper-list" id="paper-list"></ol>
+      <button type="button" class="more" id="more" hidden>Ver más papers</button>
+    </section>
+
+    <section class="models" aria-labelledby="models-title">
+      <h2 id="models-title">Modelos en tendencia en Hugging Face</h2>
+      <p class="lead" id="models-lead"></p>
+      <label class="select">Tarea
+        <select id="task"><option value="">Todas</option></select>
+      </label>
+      <div class="table-wrap" id="models-wrap">
+        <table id="models-table">
+          <thead><tr><th scope="col">Puesto</th><th scope="col" class="move-col">Ayer</th><th scope="col">Modelo</th><th scope="col">Tarea</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Días en la lista</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button type="button" class="more" id="more-models" hidden>Ver más modelos</button>
+    </section>
+
+    <section class="how" aria-labelledby="how-title">
+      <h2 id="how-title">Cómo está hecho</h2>
+      <p class="lead">Un pipeline en Python y SQL que corre solo todos los días en GitHub Actions. Usa solo la librería estándar y SQLite, así que funciona con muy poca memoria.</p>
+      <ol class="flow" id="flow"></ol>
+      <h3>Controles de calidad de la última corrida</h3>
+      <p class="lead">Si un control falla, la página no se actualiza y queda publicada la última versión buena.</p>
+      <ul class="checks" id="checks"></ul>
+    </section>
+
+    <footer>
+      <p id="updated"></p>
+      <p>Fuentes: <a href="https://arxiv.org">arXiv</a> (cs.AI, cs.CL, cs.LG y cs.CV) y la API pública de <a href="https://huggingface.co/models?sort=trending">Hugging Face</a>. Código en <a href="https://github.com/FrMahon/radar-ia">GitHub</a>.</p>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.17/dist/plot.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

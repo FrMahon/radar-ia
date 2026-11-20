@@ -1,0 +1,188 @@
+/* Página clara y fría. El rojo es de arXiv y se usa solo para el tema elegido. */
+
+:root {
+  --paper: #f9fafb;
+  --ink: #171a21;
+  --ink-2: #5d6370;
+  --rule: #dfe2e8;
+  --line: #c3c8d1;
+  --accent: #b31b1b;
+  --focus: #2457c5;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Schibsted Grotesk", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+main { max-width: 1000px; margin: 0 auto; padding: 72px 20px 40px; }
+
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+h1 {
+  margin: 0;
+  max-width: 22ch;
+  font-family: Spectral, Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.dek { margin: 18px 0 0; max-width: 62ch; color: var(--ink-2); font-size: 19px; }
+
+section { margin-top: 88px; }
+h2 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; }
+h3 { margin: 40px 0 0; font-size: 18px; }
+.lead { margin: 6px 0 0; max-width: 64ch; color: var(--ink-2); }
+
+/* --- Temas ------------------------------------------------------------------ */
+
+.topics-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 32px;
+  margin-top: 28px;
+  align-items: start;
+}
+
+.topic-list { display: grid; }
+
+.topic-list button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 8px 10px;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+}
+.topic-list button:hover { color: var(--ink); background: #eef0f3; }
+.topic-list button[aria-checked="true"] { color: var(--ink); border-left-color: var(--accent); background: #fff; }
+.topic-list .name { font-weight: 500; }
+.topic-list .share { font-variant-numeric: tabular-nums; }
+.topic-list .change { grid-column: 1 / -1; font-size: 13px; }
+
+.chart { margin: 0; min-width: 0; }
+.chart svg { display: block; overflow: visible; }
+.chart figcaption { margin-top: 12px; max-width: 60ch; color: var(--ink-2); }
+.chart figcaption strong { color: var(--ink); font-weight: 600; }
+
+/* --- Papers ------------------------------------------------------------------- */
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-top: 24px; }
+
+input[type="search"], select {
+  font: inherit;
+  font-size: 16px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+}
+input[type="search"] { width: min(360px, 100%); }
+.check { display: flex; gap: 8px; align-items: center; color: var(--ink-2); font-size: 15px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.paper-list { list-style: none; margin: 20px 0 0; padding: 0; max-width: 760px; }
+.paper-list li { padding: 14px 0; border-top: 1px solid var(--rule); }
+.paper-list a { font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; line-height: 1.3; text-decoration: none; }
+.paper-list a:hover { text-decoration: underline; }
+.paper-list .meta { margin-top: 4px; color: var(--ink-2); font-size: 14px; }
+.paper-list .empty { color: var(--ink-2); }
+
+.more {
+  margin-top: 16px;
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+.more:hover { border-color: var(--ink-2); }
+
+/* --- Modelos --------------------------------------------------------------------- */
+
+.select { display: inline-flex; gap: 10px; align-items: center; margin-top: 24px; color: var(--ink-2); font-size: 15px; }
+
+.table-wrap { margin-top: 16px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 500; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--ink); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.model { word-break: break-word; }
+td.model a { text-decoration: none; font-weight: 500; }
+td.model a:hover { text-decoration: underline; }
+td.model .author { color: var(--ink-2); font-weight: 400; }
+.num { text-align: right; }
+.up { color: var(--ink); }
+.down, .same { color: var(--ink-2); }
+.new { color: var(--accent); font-weight: 500; }
+.no-prev .move-col, .no-prev td.move { display: none; }
+
+/* --- Cómo está hecho ---------------------------------------------------------------- */
+
+.flow { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 0; max-width: 760px; }
+.flow li {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 16px;
+  padding: 12px 0 12px 22px;
+  border-left: 2px solid var(--line);
+  position: relative;
+}
+.flow li::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 19px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink-2);
+}
+.flow .step { font-weight: 700; }
+.flow .what { color: var(--ink-2); }
+.flow .what b { color: var(--ink); font-weight: 500; }
+
+.checks { list-style: none; margin: 16px 0 0; padding: 0; max-width: 760px; }
+.checks li { display: flex; gap: 10px; padding: 6px 0; }
+.checks .mark { width: 1.2em; flex: none; font-weight: 700; }
+.checks .ok { color: #1f7a4d; }
+.checks .warn { color: #a15c00; }
+
+footer { margin-top: 88px; padding-top: 20px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: 14px; }
+footer p { margin: 4px 0; }
+
+@media (max-width: 760px) {
+  main { padding: 48px 16px 32px; }
+  section { margin-top: 64px; }
+  .topics-grid { grid-template-columns: 1fr; gap: 20px; }
+  .topic-list { grid-template-columns: 1fr 1fr; }
+  .topic-list .change { display: none; }
+  .flow li { grid-template-columns: 1fr; gap: 2px; }
+  .move-col, td.move { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .topic-list button { transition: background-color 120ms, border-color 120ms; }
+}
