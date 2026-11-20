@@ -33,7 +33,7 @@ def export(con: sqlite3.Connection, out_dir: Path, checks: list[dict], seconds: 
             FROM dim_topics AS t LEFT JOIN mart_topic_growth AS g USING (topic_id)
             ORDER BY g.share_end DESC"""),
         "weekly": rows(con, "SELECT week, topic_id AS topic, papers, total_papers AS total, share FROM mart_weekly_topics ORDER BY week, topic_id"),
-        "hf": rows(con, "SELECT * FROM mart_hf_today ORDER BY rank"),
+        "hf": rows(con, "SELECT rank, model_id, task, likes, previous_rank, previous_date, days_trending FROM mart_hf_today ORDER BY rank"),
         "pipeline": {
             "tables": {t: con.execute(f"SELECT count(*) FROM {t}").fetchone()[0] for t in TABLES},
             "checks": checks,

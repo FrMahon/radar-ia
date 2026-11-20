@@ -74,12 +74,13 @@ def fetch_day(day: date, get: Callable[[str], bytes] = http_get, pause: float = 
 
 
 def days_to_fetch(existing: set[date], today: date, window: int, refresh: int) -> list[date]:
-    """Días que faltan en la ventana, más los últimos `refresh` días: arXiv publica con 1 a 3 días de demora."""
+    """Días que faltan en la ventana, más los últimos `refresh` días: arXiv publica con demora
+    (lo enviado un viernes a la tarde sale el martes, y los feriados la estiran)."""
     days = [today - timedelta(days=n) for n in range(1, window + 1)]
     return [d for d in days if d not in existing or (today - d).days <= refresh]
 
 
-def extract(raw_dir: Path, today: date, window: int = 84, refresh: int = 3, log=print) -> int:
+def extract(raw_dir: Path, today: date, window: int = 84, refresh: int = 7, log=print) -> int:
     out = raw_dir / "arxiv"
     out.mkdir(parents=True, exist_ok=True)
     existing = {date.fromisoformat(p.name[:10]): p for p in out.glob("*.jsonl.gz")}

@@ -9,9 +9,7 @@ on:
     paths: ["src/**", "site/**", "tests/**", "pyproject.toml", ".github/workflows/**"]
 
 permissions:
-  contents: write  # para guardar en el repo las fotos diarias de Hugging Face
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: pipeline
@@ -31,6 +29,8 @@ jobs:
   pipeline:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # solo este job: guarda en el repo las fotos diarias de Hugging Face
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -80,6 +80,9 @@ jobs:
   deploy:
     needs: pipeline
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

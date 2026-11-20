@@ -62,3 +62,14 @@ def test_days_to_fetch_fills_gaps_and_refreshes_recent_days():
     existing = {date(2026, 11, d) for d in range(10, 20)}  # 10 al 19 ya bajados
     days = arxiv.days_to_fetch(existing, today, window=12, refresh=3)
     assert days == [date(2026, 11, 19), date(2026, 11, 18), date(2026, 11, 17), date(2026, 11, 9), date(2026, 11, 8)]
+
+
+def test_extract_prunes_only_days_outside_the_window(tmp_path, monkeypatch):
+    from radar.raw import write_jsonl_gz
+    today = date(2026, 11, 20)
+    raw = tmp_path / "raw"
+    for name in ("2026-08-01", "2026-11-10"):  # 111 días atrás (fuera) y 10 días atrás (dentro)
+        write_jsonl_gz(raw / "arxiv" / f"{name}.jsonl.gz", [{"id": name}])
+    monkeypatch.setattr(arxiv, "fetch_day", lambda day: [])  # sin red; un día vacío no se escribe
+    arxiv.extract(raw, today, window=84, log=lambda *_: None)
+    assert sorted(p.name for p in (raw / "arxiv").iterdir()) == ["2026-11-10.jsonl.gz"]

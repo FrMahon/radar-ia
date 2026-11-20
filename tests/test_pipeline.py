@@ -92,3 +92,17 @@ def test_export_writes_dashboard_json(con, tmp_path):
     assert {"week", "topic", "share"} <= set(radar["weekly"][0])
     papers = json.loads((out / "papers.json").read_text(encoding="utf-8"))
     assert len(papers) == 4 and ["agentes"] in [p["topics"] for p in papers]
+
+
+def test_build_blocks_publication_when_a_check_fails(raw, tmp_path):
+    from radar.cli import cmd_build
+    write_jsonl_gz(raw / "hf" / "2026-11-21.jsonl.gz", [{"rank": 1, **model("a/x")}, {"rank": 1, **model("b/y")}])
+    out = tmp_path / "site"
+    assert cmd_build(raw.parent, out) == 1
+    assert not (out / "radar.json").exists()
+
+
+def test_build_blocks_publication_without_papers(tmp_path):
+    from radar.cli import cmd_build
+    write_jsonl_gz(tmp_path / "raw" / "hf" / "2026-11-20.jsonl.gz", [{"rank": 1, **model("a/x")}])
+    assert cmd_build(tmp_path, tmp_path / "site") == 1

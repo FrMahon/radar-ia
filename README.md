@@ -23,7 +23,7 @@ Hugging Face ──┘                               └────────
 
 | Paso | Qué hace | Dónde |
 |---|---|---|
-| Extracción | Pide a arXiv los papers de cs.AI, cs.CL, cs.LG y cs.CV de cada día (ventana de 12 semanas, respetando su límite de un pedido cada 3 s) y saca una foto diaria del top 100 de Hugging Face. Incremental: solo baja los días que faltan y vuelve a pedir los últimos 3, porque arXiv publica con demora. | `src/radar/arxiv.py`, `src/radar/hf.py` |
+| Extracción | Pide a arXiv los papers de cs.AI, cs.CL, cs.LG y cs.CV de cada día (ventana de 12 semanas, respetando su límite de un pedido cada 3 s) y saca una foto diaria del top 100 de Hugging Face. Incremental: solo baja los días que faltan y vuelve a pedir la última semana, porque arXiv publica con demora (lo enviado un viernes a la tarde aparece el martes). | `src/radar/arxiv.py`, `src/radar/hf.py` |
 | Capa cruda | Un archivo JSONL comprimido por día y fuente, escrito de forma atómica. Es la fuente de verdad: el warehouse se reconstruye entero desde acá en cada corrida. | `data/raw/` |
 | Staging | Tipa y limpia con SQL; deja una fila por paper (su última versión) y una por modelo en cada foto. | `src/radar/sql/10_staging.sql` |
 | Temas | Taxonomía de 10 temas y etiquetado por expresiones regulares sobre el título, con una función `REGEXP` registrada en SQLite desde Python. No usa el resumen: ahí casi todos dicen "benchmark" o "agent" de pasada y eso infla los temas. | `src/radar/sql/20_topics.sql` |
@@ -33,7 +33,7 @@ Hugging Face ──┘                               └────────
 
 ### Decisiones
 
-- **Solo librería estándar y SQLite.** Sin pandas ni servidores: la corrida completa usa unos pocos MB de memoria y no hay nada que instalar para correrla.
+- **Solo librería estándar y SQLite.** Sin pandas ni servidores: la corrida completa usa unos 26 MB de memoria con 12 semanas de datos y no hay nada que instalar para correrla.
 - **Dónde vive cada dato.** arXiv se puede volver a descargar, así que se guarda en la caché de GitHub Actions (si se borra, el pipeline la reconstruye solo). Las fotos de Hugging Face no se pueden recuperar después, así que se versionan en el repo.
 - **Temas por reglas, no por un modelo.** Es rápido, barato y explicable; la contra es que se pierden papers que hablan de un tema con otras palabras o solo en el resumen. El siguiente paso sería un clasificador con embeddings.
 - **Semanas completas.** El gráfico descarta la primera y la última semana si están incompletas, para que no parezcan caídas.

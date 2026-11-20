@@ -32,6 +32,8 @@ const longDate = (s) => asDate(s).toLocaleDateString("es-AR", { day: "numeric", 
 const shortDate = (s) => asDate(s).toLocaleDateString("es-AR", { day: "numeric", month: "short", timeZone: "UTC" });
 const taskName = (t) => TASKS[t] ?? t.replaceAll("-", " ");
 const $ = (id) => document.getElementById(id);
+const per100 = (x) => (x < 0.005 ? "menos de 1" : String(Math.round(x * 100)));
+const trend = (c) => (c >= 0.005 ? "Sube" : c <= -0.005 ? "Baja" : "Estable");
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
@@ -56,10 +58,10 @@ async function main() {
     return;
   }
   topics = new Map(radar.topics.map((t) => [t.id, t]));
-  const grower = [...radar.topics].sort((a, b) => (b.change ?? 0) - (a.change ?? 0))[0];
-  state.topic = grower.id;
+  const top = radar.topics[0];  // ya viene ordenado del tema más frecuente al menos frecuente
+  state.topic = top.id;
 
-  renderOpening(grower);
+  renderOpening(top);
   renderTopicList();
   renderTopic();
   renderModels();
@@ -74,20 +76,15 @@ async function main() {
   addEventListener("resize", () => { clearTimeout(resize); resize = setTimeout(renderChart, 150); });
 }
 
-function renderOpening(grower) {
-  const weeks = new Set(radar.weekly.map((d) => d.week)).size;
-  if (grower.change != null && grower.change >= 0.005) {
-    $("headline").textContent = `Los papers sobre ${grower.name.toLowerCase()} pasaron del ${pct(grower.share_start)} al ${pct(grower.share_end)} de todo lo que se publica en IA`;
-  }
-  $("dek").textContent = `${nf.format(radar.papers_total)} papers de inteligencia artificial publicados en arXiv desde el ${longDate(radar.coverage.first_day)}, agrupados por tema. ${weeks >= 8 ? `Se comparan las primeras 4 de ${weeks} semanas con las últimas 4. ` : ""}Se actualiza todos los días.`;
+function renderOpening(top) {
+  $("headline").textContent = `De cada 100 estudios nuevos sobre inteligencia artificial, ${per100(top.share_end)} tratan sobre ${top.name.toLowerCase()}`;
+  $("dek").textContent = `Es el tema más frecuente entre los ${nf.format(radar.papers_total)} estudios publicados desde el ${longDate(radar.coverage.first_day)} en arXiv, el sitio donde investigadores de todo el mundo comparten su trabajo. Abajo podés ver los demás temas, los estudios de esta semana y los modelos de IA más populares del momento. Se actualiza solo todos los días.`;
 }
 
 function renderTopicList() {
   const list = $("topic-list");
   list.replaceChildren(...radar.topics.map((t) => {
-    const c = Math.round((t.change ?? 0) * 1000) / 1000;  // a una décima de punto, como se muestra
-    const weeks = new Set(radar.weekly.map((d) => d.week)).size;
-    const change = t.change == null ? "" : c === 0 ? `Sin cambios en ${weeks} semanas` : `${c > 0 ? "▲" : "▼"} ${pts(Math.abs(c)).replace("+", "")} en ${weeks} semanas`;
+    const change = t.change == null ? "" : trend(t.change);
     const b = el("button", { type: "button", role: "radio", "data-topic": t.id },
       el("span", { class: "name" }, t.name),
       el("span", { class: "share" }, t.share_end == null ? "" : pct(t.share_end, 0)),
@@ -124,7 +121,8 @@ function renderTopic() {
   const note = $("topic-note");
   note.replaceChildren(el("strong", {}, t.name), `: ${t.description} `);
   if (t.share_end != null) {
-    note.append(`En las últimas 4 semanas aparece en el título del ${pct(t.share_end)} de los papers; al principio del período, del ${pct(t.share_start)}.`);
+    const since = asDate(radar.weekly[0].week).toLocaleDateString("es-AR", { month: "long", timeZone: "UTC" });
+    note.append(`Hoy aparece en ${per100(t.share_end)} de cada 100 estudios; a principios de ${since}, en ${per100(t.share_start)} de cada 100.`);
   }
   renderChart();
   renderPapers();
@@ -142,7 +140,7 @@ function renderChart() {
     marginRight: 12,
     style: { fontFamily: "inherit", fontSize: "13px", color: "#5d6370" },
     x: { type: "utc", label: null, tickFormat: (d) => d.toLocaleDateString("es-AR", { day: "numeric", month: "short", timeZone: "UTC" }), ticks: width < 500 ? 4 : 8 },
-    y: { label: null, grid: true, tickFormat: (d) => `${Math.round(d * 100)} %`, domain: [0, Math.max(...data.map((d) => d.share)) * 1.08] },
+    y: { label: "% de los estudios de cada semana", grid: true, tickFormat: (d) => `${Math.round(d * 100)} %`, domain: [0, Math.max(...data.map((d) => d.share)) * 1.08] },
     marks: [
       Plot.lineY(data.filter((d) => d.topic !== state.topic), { x: "date", y: "share", z: "topic", stroke: GREY, strokeWidth: 1.2, curve: "monotone-x" }),
       Plot.lineY(sel, { x: "date", y: "share", stroke: ACCENT, strokeWidth: 2.6, curve: "monotone-x" }),
@@ -150,11 +148,11 @@ function renderChart() {
       Plot.text(sel.slice(-1), { x: "date", y: "share", text: (d) => pct(d.share, 0), dy: -14, fill: ACCENT, fontWeight: 700, fontSize: 14 }),
       Plot.tip(data, Plot.pointer({
         x: "date", y: "share", z: "topic",
-        title: (d) => `${d.name}\nSemana del ${shortDate(d.week)}: ${pct(d.share)}\n${nf.format(d.papers)} de ${nf.format(d.total)} papers\nTocá para elegir este tema`,
+        title: (d) => `${d.name}\nSemana del ${shortDate(d.week)}: ${pct(d.share)}\n${nf.format(d.papers)} de ${nf.format(d.total)} estudios\nTocá para elegir este tema`,
       })),
     ],
   });
-  plot.setAttribute("aria-label", `Proporción semanal de papers por tema. Resaltado: ${topics.get(state.topic).name}.`);
+  plot.setAttribute("aria-label", `Cuántos de cada 100 estudios por semana tratan cada tema. Resaltado: ${topics.get(state.topic).name}.`);
   plot.addEventListener("click", () => { if (plot.value) selectTopic(plot.value.topic); });
   box.replaceChildren(plot);
 }
@@ -165,12 +163,12 @@ function renderPapers() {
   const hits = state.query ? pool.filter((p) => p.title.toLowerCase().includes(state.query)) : pool;
   const days = papers.length ? `entre el ${longDate(papers.at(-1).date)} y el ${longDate(papers[0].date)}` : "";
   $("papers-lead").textContent = state.all
-    ? `${nf.format(papers.length)} papers de IA publicados ${days}.`
-    : `${nf.format(pool.length)} de los ${nf.format(papers.length)} papers publicados ${days} tratan sobre ${t.name.toLowerCase()}. Cambiá el tema arriba o mirá todos.`;
+    ? `${nf.format(papers.length)} estudios publicados ${days}. Los títulos están en inglés, como se publicaron. Tocá uno para leerlo en arXiv.`
+    : `${nf.format(pool.length)} de los ${nf.format(papers.length)} estudios publicados ${days} tratan sobre ${t.name.toLowerCase()}. Los títulos están en inglés, como se publicaron. Tocá uno para leerlo en arXiv.`;
 
   const list = $("paper-list");
   if (!hits.length) {
-    list.replaceChildren(el("li", { class: "empty" }, state.query ? `Ningún título contiene “${state.query}”. Probá con otra palabra o marcá “Todos los temas”.` : "No hay papers de este tema en los últimos días."));
+    list.replaceChildren(el("li", { class: "empty" }, state.query ? `Ningún título contiene “${state.query}”. Probá con otra palabra o marcá “Todos los temas”.` : "No hay estudios de este tema en los últimos días."));
   } else {
     list.replaceChildren(...hits.slice(0, state.shown).map((p) => el("li", {},
       el("a", { href: `https://arxiv.org/abs/${p.id}`, target: "_blank", rel: "noopener" }, p.title),
@@ -178,7 +176,7 @@ function renderPapers() {
   }
   const more = $("more");
   more.hidden = hits.length <= state.shown;
-  more.textContent = `Ver más papers (quedan ${nf.format(Math.max(0, hits.length - state.shown))})`;
+  more.textContent = `Ver más estudios (quedan ${nf.format(Math.max(0, hits.length - state.shown))})`;
 }
 
 function renderModels() {
@@ -187,8 +185,8 @@ function renderModels() {
   const counts = d3.rollups(hf, (v) => v.length, (d) => d.task).sort((a, b) => b[1] - a[1]);
   const [topTask, topCount] = counts[0];
   const fresh = hf.filter((m) => m.previous_date && m.previous_rank == null).length;
-  $("models-lead").textContent = `Los 100 modelos que más crecen hoy en Hugging Face. ${topCount} son de ${taskName(topTask).toLowerCase()}, la tarea más común.` +
-    (hf[0].previous_date ? ` ${fresh} entraron a la lista desde ayer.` : " El cambio de puesto aparece desde la segunda foto diaria.");
+  $("models-lead").textContent = `Hugging Face es el sitio donde se comparten modelos de IA para que cualquiera los descargue y use. Estos son los 100 que más interés despiertan hoy; ${topCount} sirven para ${taskName(topTask).toLowerCase()}, el uso más común.` +
+    (hf[0].previous_date ? ` ${fresh} son nuevos en la lista desde ayer.` : " Desde mañana vas a ver cuáles suben y cuáles bajan.");
   $("models-table").classList.toggle("no-prev", !hf[0].previous_date);
   $("task").append(...counts.map(([task, n]) => el("option", { value: task }, `${taskName(task)} (${n})`)));
   renderModelRows();
@@ -224,12 +222,12 @@ function renderModelRows() {
 function renderHow() {
   const n = radar.pipeline.tables;
   const steps = [
-    ["Extracción", ["Pide a la API de arXiv los papers de cada día (", el("b", {}, nf.format(radar.coverage.days)), " días) y saca una foto diaria de los modelos en tendencia de Hugging Face."]],
-    ["Capa cruda", ["Guarda cada respuesta tal cual, un archivo JSONL comprimido por día. Si una corrida se corta, la siguiente completa solo lo que falta."]],
-    ["Staging", ["Carga todo en SQLite y lo limpia con SQL: ", el("b", {}, nf.format(n.raw_arxiv)), " filas crudas quedan en ", el("b", {}, nf.format(n.stg_papers)), " papers únicos, uno por paper en su última versión."]],
-    ["Temas", ["Etiqueta cada paper con reglas sobre su título: ", el("b", {}, nf.format(n.fct_paper_topics)), " etiquetas en ", el("b", {}, String(radar.topics.length)), " temas."]],
-    ["Marts", ["Calcula la proporción semanal por tema, cuánto cambió cada uno y los movimientos del ranking de modelos."]],
-    ["Publicación", ["Corre los controles de calidad, exporta JSON chico y publica esta página en GitHub Pages. Toda la corrida tarda ", el("b", {}, `${nf.format(radar.pipeline.seconds)} s`), "."]],
+    ["Descarga", ["Todos los días le pide a arXiv los estudios nuevos sobre IA (ya junta ", el("b", {}, nf.format(radar.coverage.days)), " días) y anota qué modelos son tendencia en Hugging Face."]],
+    ["Archivo original", ["Guarda todo tal como llegó, un archivo por día. Si algo se corta, la próxima vez completa solo lo que falta."]],
+    ["Limpieza (staging)", ["Ordena los datos en una base SQLite y saca repetidos: ", el("b", {}, nf.format(n.raw_arxiv)), " registros quedan en ", el("b", {}, nf.format(n.stg_papers)), " estudios únicos."]],
+    ["Temas", ["Busca palabras clave en cada título para saber de qué trata: ", el("b", {}, nf.format(n.fct_paper_topics)), " etiquetas en ", el("b", {}, String(radar.topics.length)), " temas."]],
+    ["Resúmenes (marts)", ["Calcula con SQL cuánto pesa cada tema por semana, si sube o baja, y quién sube en el ranking de modelos."]],
+    ["Controles y publicación", ["Revisa que los datos estén bien y publica esta página. Todo tarda ", el("b", {}, `${nf.format(radar.pipeline.seconds)} segundos`), "."]],
   ];
   $("flow").replaceChildren(...steps.map(([step, what]) => el("li", {}, el("span", { class: "step" }, step), el("span", { class: "what" }, ...what))));
   $("checks").replaceChildren(...radar.pipeline.checks.map((c) => el("li", {},
